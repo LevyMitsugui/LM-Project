@@ -1,10 +1,11 @@
-import tkinter as tk
+
 import pygame
 import threading
 import time
 import math
 import numpy as np
 from scipy.ndimage import gaussian_filter
+import tkinter as tk
 
 # Global variables to store the current and target colors for 9 quadrants
 quadrants_current_colors = [(255, 255, 255)] * 9  # Start with white for all quadrants
@@ -55,7 +56,8 @@ def apply_gaussian_blur(surface, sigma):
 # Function to display gradient with dynamic color transitions and fluctuations for 9 quadrants
 def display_gradient():
     pygame.init()
-    screen = pygame.display.set_mode((800, 600))  # Windowed mode (800x600)
+    #set as full screen
+    screen = pygame.display.set_mode( (1920, 1080), pygame.FULLSCREEN)  #(800x600)
     pygame.display.set_caption("Dynamic Color Transitions with Fluctuations")
 
     running = True

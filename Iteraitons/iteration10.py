@@ -3,11 +3,14 @@ import pygame
 import threading
 import time
 import math
+import numpy as np
+import cv2  # Import OpenCV
 
 # Global variables to store the current and target colors for 9 quadrants
 quadrants_current_colors = [(255, 255, 255)] * 9  # Start with white for all quadrants
 quadrants_target_colors = [(255, 255, 255)] * 9   # Target color for each quadrant
-transition_start_times = [time.time()] * 9        # Start time for each quadrant transition
+transition_start_times = [time.time()] * 9          # Start time for each quadrant transition
+blur_sigma = 30  # Standard deviation for the Gaussian blur, can be adjusted
 
 # Lock to manage transitions safely
 color_lock = threading.Lock()
@@ -21,8 +24,8 @@ def interpolate_color(color1, color2, t):
 
 # Function to add slight fluctuation to a color
 def fluctuate_color(base_color, time_elapsed):
-    fluctuation_range = 18  # Adjust the range for noticeable effect
-    fluctuation_speed = 0.5    # Speed up the fluctuation
+    fluctuation_range = 8  # Adjust the range for noticeable effect
+    fluctuation_speed = 0.8    # Speed up the fluctuation
 
     r = base_color[0] + fluctuation_range * math.sin(fluctuation_speed * time_elapsed)
     g = base_color[1] + fluctuation_range * math.sin(fluctuation_speed * time_elapsed + 2)
@@ -35,10 +38,30 @@ def fluctuate_color(base_color, time_elapsed):
 
     return (r, g, b)
 
+# Function to apply Gaussian blur using OpenCV
+def apply_gaussian_blur(surface, sigma):
+    if sigma <= 0:
+        return surface
+
+    # Convert the surface to a numpy array
+    array = pygame.surfarray.array3d(surface)
+
+    # Transpose array to match OpenCV's BGR format (pygame uses (width, height, 3), OpenCV expects (height, width, 3))
+    array = np.transpose(array, (1, 0, 2))
+
+    # Apply Gaussian blur using OpenCV
+    blurred_array = cv2.GaussianBlur(array, (0, 0), sigma)
+
+    # Transpose back to match Pygame's format
+    blurred_array = np.transpose(blurred_array, (1, 0, 2))
+
+    # Convert back to Pygame surface
+    return pygame.surfarray.make_surface(blurred_array)
+
 # Function to display gradient with dynamic color transitions and fluctuations for 9 quadrants
 def display_gradient():
     pygame.init()
-    screen = pygame.display.set_mode((1920, 1080))#(800, 600))  # Windowed mode (800x600)
+    screen = pygame.display.set_mode((800, 600))  # Windowed mode (800x600)
     pygame.display.set_caption("Dynamic Color Transitions with Fluctuations")
 
     running = True
@@ -71,6 +94,10 @@ def display_gradient():
 
                 # Draw the quadrant with the fluctuating color
                 pygame.draw.rect(screen, fluctuating_color, (rect_x, rect_y, rect_width, rect_height))
+
+        # Apply Gaussian blur effect to the entire screen using OpenCV
+        blurred_screen = apply_gaussian_blur(screen.copy(), blur_sigma)
+        screen.blit(blurred_screen, (0, 0))
 
         pygame.display.flip()
 
@@ -132,7 +159,7 @@ def create_gui():
                            6: (161,110,47), # Quadrant 7 to Purple
                            7: (161,110,47), # Quadrant 8 to Orange
                            8: (161,110,47) # Quadrant 9 to Gray
-                       }))   
+                       }))  
 
     # Pack button into the window
     button1.pack(pady=10)
